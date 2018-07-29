@@ -1,0 +1,72 @@
+input {
+     file {
+        type => "Cisco_CTA"
+        path => "/var/log/cta.log"
+        sincedb_path => "/var/log/.cta_sincedb"
+        }
+}
+
+filter {
+        if [type] == "Cisco_CTA" {
+  grok {
+              match => [ "message", "%{MONTH}%{SPACE}%{NUMBER} %{TIME} %{IPORHOST} CEF: 0\|Cisco\|Cognitive Threat Analytics\|1.0\|1\|Web Flow\|%{NUMBER:risk}\|start=%{NUMBER} end=%{NUMBER} outcome=%{NUMBER:outcome} requestClientApplication=(?:%{DATA:request_client_application}|) out=(?:%{NUMBER:out}|) in=(?:%{NUMBER:in}|) request=%{DATA:request} src=%{IP:srcip} dst=%{IP:dstip} suser=(?:%{DATA:suser}|) cn1Label=%{DATA:cn1_label} cn1=%{DATA:cn1} cat=%{DATA:category} fname=(?:%{DATA:fname}|) oldFileType=(?:%{DATA:old_file_type}|) fileType=(?:%{DATA:filetype}|) fileHash=(?:%{DATA:filehash}|) deviceFacility=%{DATA:device_facility} reason=%{DATA:reason} msg=%{DATA:msg} cs1Label=%{DATA:cs1_label} cs1=%{DATA:cs1} act=%{DATA:act} cs2Label=%{DATA:cs2_label} cs2=(?:%{DATA:cs2}|) sourceServiceName=%{DATA:source_service_name} cs3Label=%{DATA:cs3_label} cs3=%{GREEDYDATA:cs3}",
+                   "message", "%{MONTH}%{SPACE}%{NUMBER} %{TIME} %{IPORHOST} CEF: 0\|Cisco\|Cognitive Threat Analytics\|1.0\|1\|Web Flow\|%{NUMBER:risk}\|start=%{NUMBER} end=%{NUMBER} outcome=%{NUMBER:outcome} requestClientApplication=(?:%{DATA:request_client_application}|) out=(?:%{NUMBER:out}|) in=(?:%{NUMBER:in}|) request=%{DATA:request} src=%{IP:srcip} dst=%{IP:dstip} sntdom=%{DATA:sntdom} suser=(?:%{DATA:suser}|) cn1Label=%{DATA:cn1_label} cn1=%{DATA:cn1} cat=%{DATA:category} fname=(?:%{DATA:fname}|) oldFileType=(?:%{DATA:old_file_type}|) fileType=(?:%{DATA:filetype}|) fileHash=(?:%{DATA:filehash}|) deviceFacility=%{DATA:device_facility} reason=%{DATA:reason} msg=%{DATA:msg} cs1Label=%{DATA:cs1_label} cs1=%{DATA:cs1} act=%{DATA:act} cs2Label=%{DATA:cs2_label} cs2=(?:%{DATA:cs2}|) sourceServiceName=%{DATA:source_service_name} cs3Label=%{DATA:cs3_label} cs3=%{GREEDYDATA:cs3}",
+             "message", "%{MONTH}%{SPACE}%{NUMBER} %{TIME} %{IPORHOST} CEF: message repeated %{NUMBER} times: \[0\|Cisco\|Cognitive Threat Analytics\|1.0\|1\|Web Flow\|%{NUMBER:risk}\|start=%{NUMBER} end=%{NUMBER} outcome=%{NUMBER:outcome} requestClientApplication=(?:%{DATA:request_client_application}|) out=(?:%{NUMBER:out}|) in=(?:%{NUMBER:in}|) request=%{DATA:request} src=%{IP:srcip} dst=%{IP:dstip} suser=(?:%{DATA:suser}|) cn1Label=%{DATA:cn1_label} cn1=%{DATA:cn1} cat=%{DATA:category} fname=(?:%{DATA:fname}|) oldFileType=(?:%{DATA:old_file_type}|) fileType=(?:%{DATA:filetype}|) fileHash=(?:%{DATA:filehash}|) deviceFacility=%{DATA:device_facility} reason=%{DATA:reason} msg=%{DATA:msg} cs1Label=%{DATA:cs1_label} cs1=%{DATA:cs1} act=%{DATA:act} cs2Label=%{DATA:cs2_label} cs2=(?:%{DATA:cs2}|) sourceServiceName=%{DATA:source_service_name} cs3Label=%{DATA:cs3_label} cs3=%{GREEDYDATA:cs3}",
+                               "message", "%{MONTH}%{SPACE}%{NUMBER} %{TIME} %{IPORHOST} CEF: message repeated %{NUMBER} times: \[0\|Cisco\|Cognitive Threat Analytics\|1.0\|1\|Web Flow\|%{NUMBER:risk}\|start=%{NUMBER} end=%{NUMBER} outcome=%{NUMBER:outcome} requestClientApplication=(?:%{DATA:request_client_application}|) out=(?:%{NUMBER:out}|) in=(?:%{NUMBER:in}|) request=%{DATA:request} src=%{IP:srcip} dst=%{IP:dstip} sntdom=%{DATA:sntdom} suser=(?:%{DATA:suser}|) cn1Label=%{DATA:cn1_label} cn1=%{DATA:cn1} cat=%{DATA:category} fname=(?:%{DATA:fname}|) oldFileType=(?:%{DATA:old_file_type}|) fileType=(?:%{DATA:filetype}|) fileHash=(?:%{DATA:filehash}|) deviceFacility=%{DATA:device_facility} reason=%{DATA:reason} msg=%{DATA:msg} cs1Label=%{DATA:cs1_label} cs1=%{DATA:cs1} act=%{DATA:act} cs2Label=%{DATA:cs2_label} cs2=(?:%{DATA:cs2}|) sourceServiceName=%{DATA:source_service_name} cs3Label=%{DATA:cs3_label} cs3=%{GREEDYDATA:cs3}"
+
+                     ]
+          }
+        }    
+
+  if "Cisco_CTA" in [type] {
+        mutate {
+        add_field => [ "Cisco_CTA_Portal_lookup", "https://td.cloudsec.sco.cisco.com/CWSP/customer/search?stringFilter=%{srcip}" ]
+        add_field => [ "Talos_Src_IP_Lookup", "https://www.talosintelligence.com/reputation_center/lookup?search=%{srcip}" ]
+        add_field => [ "Talos_Dst_IP_Lookup", "https://www.talosintelligence.com/reputation_center/lookup?search=%{dstip}" ]
+        add_field => [ "MXtoolbox_Src_IP_Lookup", "https://mxtoolbox.com/SuperTool.aspx?action=blacklist%3a%{srcip}&run=toolpage" ]
+        add_field => [ "MXtoolbox_Dst_IP_Lookup", "https://mxtoolbox.com/SuperTool.aspx?action=blacklist%3a%{dstip}&run=toolpage" ]
+        add_field => [ "Whois_Src_IP_Lookup", "http://whois.domaintools.com/%{srcip}" ]
+        add_field => [ "Whois_Dst_IP_Lookup", "http://whois.domaintools.com/%{dstip}" ]
+  #add_field => [ "hostname" => "%{srcip}" ]
+  }
+
+     
+        }
+}
+
+filter {
+        if [type] == "Cisco_CTA" {
+        mutate {
+         add_field => {
+          "hostname" => "%{srcip}"
+         }
+        }
+       }
+       dns {
+       reverse => [ "hostname" ]
+       action => "replace"
+      }
+}
+
+
+filter {
+    if [type] == "Cisco_CTA" {
+       grok {
+                match => [ "hostname", "%{DATA:barcode}\.%{DATA}\.%{DATA}\.%{DATA}" ]
+            }
+    
+    fingerprint {
+    source => "message"
+    target => "[@metadata][fingerprint]"
+    method => "MURMUR3"
+    }
+  }
+}
+} 
+} 
+} 
+} 
+} 
+} 
+} 
+} 
